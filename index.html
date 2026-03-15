@@ -1,6 +1,6 @@
 <html>
 <head>
-    <link rel="stylesheet" href="style.css"> <script type="text/javascript" src="Slime.js"></script>
+    <script type="text/javascript" src="Slime.js"></script>
     <script type="text/javascript" src="Input.js"></script>
     <script type="text/javascript" src="SlimeAI.js"></script>
     <script type="text/javascript">
@@ -9,8 +9,12 @@
         var gameRunning = false, onePlayer = true, slimeAI = null;
         var KEY_A=65, KEY_D=68, KEY_W=87, KEY_LEFT=37, KEY_RIGHT=39, KEY_UP=38;
 
-        // TOURNAMENT CONSTANTS
-        var GRAVITY_BALL = 1, GRAVITY_SLIME = 2, JUMP_POWER = 31;
+        // TOURNAMENT CONSTANTS (CWest Standard)
+        var GRAVITY_BALL = 1;
+        var GRAVITY_SLIME = 2;
+        var JUMP_POWER = 31;
+        var MAX_VELOCITY_X = 15;
+        var MAX_VELOCITY_Y = 22;
 
         function start(is1P) {
             onePlayer = is1P;
@@ -52,80 +56,4 @@
                 if (something <= 0) {
                     ball.velocityX += Math.trunc(s.velocityX - 2 * dx * something / dist);
                     ball.velocityY += Math.trunc(s.velocityY - 2 * dy * something / dist);
-                }
-            }
-        }
-
-        function updateBall() {
-            ball.velocityY = Math.max(ball.velocityY - GRAVITY_BALL, -22);
-            ball.x += ball.velocityX; ball.y += ball.velocityY;
-            collisionBallSlime(slimeLeft); collisionBallSlime(slimeRight);
-            if (ball.x < 15) { ball.x = 15; ball.velocityX = -ball.velocityX; }
-            else if (ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
-            if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
-                if (ball.velocityY < 0 && ball.y > 130) { ball.velocityY *= -1; ball.y = 130; }
-                else if (ball.x < 500) { ball.x = 480; ball.velocityX = -Math.abs(ball.velocityX); }
-                else { ball.x = 520; ball.velocityX = Math.abs(ball.velocityX); }
-            }
-            if (ball.y < 0) {
-                if (ball.x > 500) { slime1Score++; initRound(true); }
-                else { slime2Score++; initRound(false); }
-            }
-        }
-
-        function updateFrame() {
-            if (!gameRunning) return;
-            updateSlimeVelocities(slimeLeft, KEY_A, KEY_D, KEY_W);
-            if (!onePlayer) {
-                updateSlimeVelocities(slimeRight, KEY_LEFT, KEY_RIGHT, KEY_UP);
-            } else {
-                slimeAI.move();
-                var move = slimeAI.movement;
-                slimeRight.velocityX = (move === 1) ? -8 : (move === 2 ? 8 : 0);
-                if (slimeAI.jumpSet && slimeRight.y === 0) slimeRight.velocityY = JUMP_POWER;
-            }
-            updateSlime(slimeLeft, 50, 445); updateSlime(slimeRight, 555, 950);
-            updateBall();
-        }
-
-        function renderGame() {
-            var cH = viewHeight / 5;
-            ctx.fillStyle = '#0077ff'; ctx.fillRect(0, 0, viewWidth, viewHeight - cH);
-            ctx.fillStyle = '#ca6'; ctx.fillRect(0, viewHeight - cH, viewWidth, cH);
-            ctx.fillStyle = '#fff'; ctx.fillRect(viewWidth/2 - 2, 7*viewHeight/10, 4, viewHeight/10 + 5);
-            ctx.font = "20px Arial"; ctx.fillStyle = "white";
-            ctx.fillText("Score: " + slime1Score, 30, 40);
-            ctx.fillText("Score: " + slime2Score, viewWidth - 130, 40);
-            ball.render(); slimeLeft.render(); slimeRight.render();
-        }
-
-        function gameIteration() { updateFrame(); requestAnimationFrame(renderGame); }
-
-        function initRound(server) {
-            ball.x = server ? 200 : 800; ball.y = 356; ball.velocityX = 0; ball.velocityY = 0;
-            slimeLeft.x = 200; slimeLeft.y = 0; slimeRight.x = 800; slimeRight.y = 0;
-        }
-
-        function bodyload() {
-            canvas = document.getElementById("gameCanvas"); ctx = canvas.getContext("2d");
-            viewWidth = canvas.width; viewHeight = canvas.height;
-            pixelsPerUnitX = viewWidth / 1000; pixelsPerUnitY = viewHeight / 1000;
-            courtYPix = 4 * viewHeight / 5;
-            ball = newBall(25, '#ff0'); slimeLeft = newSlime(100, '#0f0'); slimeRight = newSlime(100, '#f00');
-            initRound(true); setInterval(gameIteration, 20);
-        }
-    </script>
-</head>
-<body onload="bodyload()" style="background:#222; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;">
-    <div id="ContentDiv">
-        <div id="menu" style="position: absolute; width: 750px; height: 375px; background: #ca6 url('beachbg.jpg') no-repeat; background-size: cover; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 10px; text-align: center;">
-            <h1 style="color: white; text-shadow: 2px 2px 4px #000;">Slime Volleyball</h1>
-            <div>
-                <span class="btn" style="font-size: 30px; margin: 20px;" onclick="start(true)">One Player</span>
-                <span class="btn" style="font-size: 30px; margin: 20px;" onclick="start(false)">Two Players</span>
-            </div>
-        </div>
-        <canvas id="gameCanvas" width="750" height="375" style="display: block; box-shadow: 0 0 20px #000; border-radius: 10px;"></canvas>
-    </div>
-</body>
-</html>
+                    if (ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX
