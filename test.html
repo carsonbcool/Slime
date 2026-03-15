@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>No-Fail Slime</title>
+    <style>
+        body { background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        canvas { background: #0077ff; border: 5px solid #ca6; box-shadow: 0 0 20px #000; }
+    </style>
+</head>
+<body>
+    <canvas id="g" width="750" height="375"></canvas>
+<script>
+    var c=document.getElementById("g"), ctx=c.getContext("2d"), k={};
+    window.onkeydown=function(e){k[e.keyCode]=true;}; window.onkeyup=function(e){k[e.keyCode]=false;};
+
+    // Physics Constants
+    var gb=1, gs=2, jp=31, score=[0,0];
+    var b={x:200,y:356,vx:0,vy:0}, sL={x:200,y:0,vx:0,vy:0}, sR={x:800,y:0,vx:0,vy:0};
+
+    function update() {
+        // Controls
+        sL.vx = k[65]?(k[68]?0:-8):k[68]?8:0; if(sL.y==0 && k[87]) sL.vy=jp;
+        sR.vx = k[37]?(k[39]?0:-8):k[39]?8:0; if(sR.y==0 && k[38]) sR.vy=jp;
+
+        // Gravity & Movement
+        [sL,sR].forEach(s=>{ s.x+=s.vx; if(s.y>0||s.vy!=0){s.vy-=gs; s.y+=s.vy;} if(s.y<0){s.y=0;s.vy=0;} });
+        if(sL.x<50)sL.x=50; if(sL.x>445)sL.x=445; if(sR.x<555)sR.x=555; if(sR.x>950)sR.x=950;
+
+        b.vy=Math.max(b.vy-gb,-22); b.x+=b.vx; b.y+=b.vy;
+
+        // Collision
+        [sL,sR].forEach(s=>{
+            var dx=2*(b.x-s.x), dy=b.y-s.y, d=Math.sqrt(dx*dx+dy*dy);
+            if(dy>0 && d<125){
+                b.x=s.x+Math.trunc(62.5*dx/d); b.y=s.y+Math.trunc(125*dy/d);
+                var v=(dx*(b.vx-s.vx)+dy*(b.vy-s.vy))/d;
+                if(v<=0){ b.vx+=Math.trunc(s.vx-2*dx*v/d); b.vy+=Math.trunc(s.vy-2*dy*v/d); }
+            }
+        });
+
+        // Walls & Scoring
+        if(b.x<15||b.x>985){b.vx*=-1; b.x=b.x<500?15:985;}
+        if(b.y<0){ if(b.x>500)score[0]++; else score[1]++; b.x=b.x>500?200:800; b.y=356; b.vx=0; b.vy=0; }
+    }
+
+    function draw() {
+        ctx.clearRect(0,0,750,375);
+        // Ground
+        ctx.fillStyle="#ca6"; ctx.fillRect(0,300,750,75);
+        // Net
+        ctx.fillStyle="white"; ctx.fillRect(373,260,4,45);
+        // Score
+        ctx.font="20px Arial"; ctx.fillText(score[0]+" : "+score[1], 350, 40);
+        // Ball
+        ctx.fillStyle="yellow"; ctx.beginPath(); ctx.arc(b.x*0.75, 300-b.y*0.3, 15, 0, 7); ctx.fill();
+        // Slimes
+        ctx.fillStyle="green"; ctx.beginPath(); ctx.arc(sL.x*0.75, 300-sL.y*0.3, 37, Math.PI, 0); ctx.fill();
+        ctx.fillStyle="red"; ctx.beginPath(); ctx.arc(sR.x*0.75, 300-sR.y*0.3, 37, Math.PI, 0); ctx.fill();
+    }
+
+    setInterval(()=>{update(); draw();}, 20);
+</script>
+</body>
+</html>
