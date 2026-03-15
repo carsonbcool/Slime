@@ -37,16 +37,16 @@ function newSlimeAI(onLeft,name) {
         this.meToEnemyWall     = gameWidth - slimeLeft.x;
         this.enemyToTheirWall  = gameWidth - slimeRight.x;
 
-	this.ballToEnemyWall   = gameWidth - ball.x;
-	this.ballVXToEnemyWall = -ball.velocityX;
-	moveLogic(slimeLeft,slimeRight);
+        this.ballToEnemyWall   = gameWidth - ball.x;
+        this.ballVXToEnemyWall = -ball.velocityX;
+        moveLogic(slimeLeft,slimeRight);
       } else {
         this.meToEnemyWall     = slimeRight.x;
         this.enemyToTheirWall  = slimeLeft.x;
 
-	this.ballToEnemyWall   = ball.x;
-	this.ballVXToEnemyWall = ball.velocityX;
-	this.moveLogic(slimeRight,slimeLeft);
+        this.ballToEnemyWall   = ball.x;
+        this.ballVXToEnemyWall = ball.velocityX;
+        this.moveLogic(slimeRight,slimeLeft);
       }
     },
 
@@ -73,13 +73,13 @@ function newSlimeAI(onLeft,name) {
       var velocityToEnemyWall = this.ballVXToEnemyWall;
       for(var i = 0; i < frameCount; i++) {
         toEnemyWall += velocityToEnemyWall;
-	if(toEnemyWall < 0) {
-	  toEnemyWall = 0;
-	  velocityToEnemyWall = -velocityToEnemyWall;
-	} else if(toEnemyWall > gameWidth) {
-	  toEnemyWall = gameWidth;
-	  velocityToEnemyWall = -velocityToEnemyWall;
-	}
+        if(toEnemyWall < 0) {
+          toEnemyWall = 0;
+          velocityToEnemyWall = -velocityToEnemyWall;
+        } else if(toEnemyWall > gameWidth) {
+          toEnemyWall = gameWidth;
+          velocityToEnemyWall = -velocityToEnemyWall;
+        }
       }
       return toEnemyWall;
     }
@@ -109,13 +109,13 @@ function setPatheticWhiteSlime(ai) {
     if(this.state != -1 || (this.ballVXToEnemyWall == 0 && this.ballToEnemyWall == 800)) {
       if (this.state == -1) {
         if(this.enemyToTheirWall > 250) {
-	  this.state = 0;
-	} else {
-	  this.state = 1;
-	}
-	if(Math.random() < 0.35) {
-	  this.state = Math.trunc(2 * Math.random());
-	}
+          this.state = 0;
+        } else {
+          this.state = 1;
+        }
+        if(Math.random() < 0.35) {
+          this.state = Math.trunc(2 * Math.random());
+        }
       }
       if(this.state == 0) {
         if(ball.y < 300 && ball.velocityY < -3) {
@@ -154,16 +154,16 @@ function setPatheticWhiteSlime(ai) {
         return;
 
       if (
-	  (this.meToEnemyWall >= 900 && this.ballToEnemyWall > 830) ||
-	  (this.meToEnemyWall <= 580 && this.ballToEnemyWall < 530 && Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)
-	  ) {
+          (this.meToEnemyWall >= 900 && this.ballToEnemyWall > 830) ||
+          (this.meToEnemyWall <= 580 && this.ballToEnemyWall < 530 && Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)
+          ) {
         this.randomJump85Percent();
       } else if ((Math.pow(this.ballToEnemyWall - this.meToEnemyWall, 2) * 2 + Math.pow(ball.y - me.y, 2) < 28900) &&
                  (this.ballToEnemyWall != this.meToEnemyWall)) {
         this.randomJump85Percent();
       } else if ((Math.pow(this.ballVXToEnemyWall, 2) + Math.pow(ball.velocityY, 2) < 20) &&
                  (this.ballToEnemyWall - this.meToEnemyWall < 30) &&
-		 (this.ballToEnemyWall != this.meToEnemyWall)) {
+                 (this.ballToEnemyWall != this.meToEnemyWall)) {
         this.randomJump85Percent();
       } else if ((Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 150) &&
                  (ball.y > 50) && (ball.y < 400) && (Math.random() < 0.666)) {
@@ -174,7 +174,7 @@ function setPatheticWhiteSlime(ai) {
     if (this.state == -1) {
       if(me.y == 0) {
         if (Math.abs(this.meToEnemyWall - xWhenBallBelow125) < something) {
-	  this.stopMovement();
+          this.stopMovement();
         } else if (xWhenBallBelow125 + something < this.meToEnemyWall) {
           //console.log('moveToNet 3');
           this.moveToNet();
@@ -189,17 +189,17 @@ function setPatheticWhiteSlime(ai) {
         if (this.meToEnemyWall > 900)
         {
           //console.log("moveToWall 4");
-	  this.moveToWall();
+          this.moveToWall();
           return;
         }
         if (Math.abs(this.meToEnemyWall - this.ballToEnemyWall) < something) {
-	  this.stopMovement();
+          this.stopMovement();
         } else if (this.ballToEnemyWall < this.meToEnemyWall) {
           //console.log('moveToNet 4');
-	  this.moveToNet();
+          this.moveToNet();
         } else if (this.ballToEnemyWall > this.meToEnemyWall) {
           //console.log("moveToWall 5");
-	  this.moveToWall();
+          this.moveToWall();
         }
       }
     }
@@ -231,15 +231,15 @@ function setAngryRedSlime(ai) {
     if(this.state != -1 || (this.ballVXToEnemyWall == 0 && this.ballToEnemyWall == 800)) {
       if (this.state == -1) {
         if(this.enemyToTheirWall > 250) {
-	  this.state = 0;
-	} else if(this.enemyToTheirWall < 200) {
-	  this.state = 1;
-	} else if(this.enemyToTheirWall < 250) {
-	  this.state = 2;
-	}
-	if(Math.random() < 0.35) {
-	  this.state = Math.trunc(3 * Math.random());
-	}
+          this.state = 0;
+        } else if(this.enemyToTheirWall < 200) {
+          this.state = 1;
+        } else if(this.enemyToTheirWall < 250) {
+          this.state = 2;
+        }
+        if(Math.random() < 0.35) {
+          this.state = Math.trunc(3 * Math.random());
+        }
       }
       if(this.state == 0) {
         if(ball.y < 300 && ball.velocityY < -3) {
@@ -255,17 +255,17 @@ function setAngryRedSlime(ai) {
         }
       } else if(this.state == 2) {
         if(ball.velocityY > 12 && this.meToEnemyWall < 860) {
-	  this.moveToWall();
-	}
-	if(this.meToEnemyWall >= 860) {
-	  this.stopMovement();
-	}
-	if(ball.velocityY == -3 && this.meToEnemyWall != 800) {
-	  this.jump();
-	}
-	if(ball.velocityY < -12 && me.y != 0 && this.meToEnemyWall >= 845) {
-	  this.moveToNet();
-	}
+          this.moveToWall();
+        }
+        if(this.meToEnemyWall >= 860) {
+          this.stopMovement();
+        }
+        if(ball.velocityY == -3 && this.meToEnemyWall != 800) {
+          this.jump();
+        }
+        if(ball.velocityY < -12 && me.y != 0 && this.meToEnemyWall >= 845) {
+          this.moveToNet();
+        }
       }
       return;
     }
@@ -291,16 +291,16 @@ function setAngryRedSlime(ai) {
         return;
 
       if (
-	  (this.meToEnemyWall >= 900 && this.ballToEnemyWall > 830) ||
-	  (this.meToEnemyWall <= 580 && this.ballToEnemyWall < 530 && Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)
-	  ) {
+          (this.meToEnemyWall >= 900 && this.ballToEnemyWall > 830) ||
+          (this.meToEnemyWall <= 580 && this.ballToEnemyWall < 530 && Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)
+          ) {
         this.randomJump40Percent();
       } else if ((Math.pow(this.ballToEnemyWall - this.meToEnemyWall, 2) * 2 + Math.pow(ball.y - me.y, 2) < 28900) &&
                  (this.ballToEnemyWall != this.meToEnemyWall)) {
         this.randomJump40Percent();
       } else if ((Math.pow(this.ballVXToEnemyWall, 2) + Math.pow(ball.velocityY, 2) < 20) &&
                  (this.ballToEnemyWall - this.meToEnemyWall < 30) &&
-		 (this.ballToEnemyWall != this.meToEnemyWall)) {
+                 (this.ballToEnemyWall != this.meToEnemyWall)) {
         this.randomJump40Percent();
       } else if ((Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 150) &&
                  (ball.y > 50) && (ball.y < 400) && (Math.random() < 0.5)) {
@@ -311,7 +311,7 @@ function setAngryRedSlime(ai) {
     if (this.state == -1) {
       if(me.y == 0) {
         if (Math.abs(this.meToEnemyWall - xWhenBallBelow125) < something) {
-	  this.stopMovement();
+          this.stopMovement();
         } else if (xWhenBallBelow125 + something < this.meToEnemyWall) {
           //console.log('moveToNet 3');
           this.moveToNet();
@@ -326,17 +326,17 @@ function setAngryRedSlime(ai) {
         if (this.meToEnemyWall > 900)
         {
           //console.log("moveToWall 4");
-	  this.moveToWall();
+          this.moveToWall();
           return;
         }
         if (Math.abs(this.meToEnemyWall - this.ballToEnemyWall) < something) {
-	  this.stopMovement();
+          this.stopMovement();
         } else if (this.ballToEnemyWall < this.meToEnemyWall) {
           //console.log('moveToNet 4');
-	  this.moveToNet();
+          this.moveToNet();
         } else if (this.ballToEnemyWall > this.meToEnemyWall) {
           //console.log("moveToWall 5");
-	  this.moveToWall();
+          this.moveToWall();
         }
       }
     }
@@ -364,10 +364,10 @@ function setMasterSlime(ai) {
       toEnemyWall += velocityToEnemyWall;
       if(toEnemyWall <= 0) {
         toEnemyWall = 0;
-	velocityToEnemyWall = - velocityToEnemyWall;
+        velocityToEnemyWall = - velocityToEnemyWall;
       } else if(toEnemyWall >= 1000) {
         toEnemyWall = 1000;
-	velocityToEnemyWall = - velocityToEnemyWall;
+        velocityToEnemyWall = - velocityToEnemyWall;
       }
     }
   }
@@ -375,12 +375,12 @@ function setMasterSlime(ai) {
     if(this.state == -1) {
       if(Math.random() < 0.3) {
         if(this.enemyToTheirWall < 30) {
-	  this.state = 0;
-	} else if(this.enemyToTheirWall > 200) {
-	  this.state = 1;
-	} else {
-	  this.state = 2;
-	}
+          this.state = 0;
+        } else if(this.enemyToTheirWall > 200) {
+          this.state = 1;
+        } else {
+          this.state = 2;
+        }
       } else {
         this.state = 2;
       }
@@ -419,17 +419,17 @@ function setMasterSlime(ai) {
       }
       if (me.y != 0 && this.ballToEnemyWall > 800) {
         this.state = 3;
-	var prob;
-	if(this.enemyToTheirWall < 200) {
-	  prob = 0.7;
-	} else if(this.enemyToTheirWall > 300) {
-	  prob = 0.3;
-	} else {
-	  prob = 0.5;
-	}
-	if(Math.random() < prob) {
-	  this.state++;
-	}
+        var prob;
+        if(this.enemyToTheirWall < 200) {
+          prob = 0.7;
+        } else if(this.enemyToTheirWall > 300) {
+          prob = 0.3;
+        } else {
+          prob = 0.5;
+        }
+        if(Math.random() < prob) {
+          this.state++;
+        }
       }
     } else if(this.state == 3) {
       var limit = 585;
@@ -505,12 +505,12 @@ function setMasterSlime(ai) {
 
     if ( (this.meToEnemyWall <= 900 || Math.random() >= 0.4) &&
          xWhenBallBelowMe >= 620 &&
-	 (ball.y >= 130 || ball.velocityY >= 0) &&
-	 (Math.random() >= 0.6)) {
+         (ball.y >= 130 || ball.velocityY >= 0) &&
+         (Math.random() >= 0.6)) {
 
       if ((this.meToEnemyWall >= 900 && this.ballToEnemyWall > 830) ||
           (this.meToEnemyWall <= 580 && this.ballToEnemyWall < 530 &&
-	     Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)) {
+             Math.abs(this.ballToEnemyWall - this.meToEnemyWall) < 100)) {
         this.jump();
       } else if (this.ballToEnemyWall != this.meToEnemyWall && 
         Math.pow(this.ballToEnemyWall - this.meToEnemyWall,2) * 2 + Math.pow(ball.y - me.y,2) < Math.pow(185,2)) {
