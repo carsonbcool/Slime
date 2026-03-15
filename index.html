@@ -1,28 +1,24 @@
 <html>
 <head>
-    <script type="text/javascript" src="Slime.js"></script>
+    <link rel="stylesheet" href="style.css"> <script type="text/javascript" src="Slime.js"></script>
     <script type="text/javascript" src="Input.js"></script>
     <script type="text/javascript" src="SlimeAI.js"></script>
     <script type="text/javascript">
-        var ctx, canvas, gameWidth, gameHeight, pixelsPerUnit;
-        var ball, slime1, slime2, slimeLeft, slimeRight;
-        var slime1Score = 0, slime2Score = 0;
-        var gameRunning = false, gameMode = '1P', activeAI = null;
+        var ctx, canvas, viewWidth, viewHeight, courtYPix, pixelsPerUnitX, pixelsPerUnitY;
+        var ball, slimeLeft, slimeRight, slime1Score = 0, slime2Score = 0;
+        var gameRunning = false, onePlayer = true, slimeAI = null;
+        var KEY_A=65, KEY_D=68, KEY_W=87, KEY_LEFT=37, KEY_RIGHT=39, KEY_UP=38;
 
-        // --- TOURNAMENT CONSTANTS FROM CWEST ---
-        var GRAVITY_BALL = 1;
-        var GRAVITY_SLIME = 2;
-        var JUMP_POWER = 31;
-        var MAX_VELOCITY_X = 15;
-        var MAX_VELOCITY_Y = 22;
+        // TOURNAMENT CONSTANTS
+        var GRAVITY_BALL = 1, GRAVITY_SLIME = 2, JUMP_POWER = 31;
 
-        function startLevel(mode) {
-            gameMode = mode;
+        function start(is1P) {
+            onePlayer = is1P;
             gameRunning = true;
             document.getElementById('menu').style.display = 'none';
-            if (gameMode === '1P') {
-                activeAI = newSlimeAI(false, "Slime Master");
-                setMasterSlime(activeAI);
+            if (onePlayer) {
+                slimeAI = newSlimeAI(false, "Slime Master");
+                setMasterSlime(slimeAI);
             }
             initRound(true);
         }
@@ -33,11 +29,9 @@
         }
 
         function updateSlime(s, leftLimit, rightLimit) {
-            if (s.velocityX != 0) {
-                s.x += s.velocityX;
-                if (s.x < leftLimit) s.x = leftLimit;
-                if (s.x > rightLimit) s.x = rightLimit;
-            }
+            s.x += s.velocityX;
+            if (s.x < leftLimit) s.x = leftLimit;
+            if (s.x > rightLimit) s.x = rightLimit;
             if (s.y > 0 || s.velocityY != 0) {
                 s.velocityY -= GRAVITY_SLIME;
                 s.y += s.velocityY;
@@ -58,20 +52,14 @@
                 if (something <= 0) {
                     ball.velocityX += Math.trunc(s.velocityX - 2 * dx * something / dist);
                     ball.velocityY += Math.trunc(s.velocityY - 2 * dy * something / dist);
-                    if (ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX_VELOCITY_X;
-                    else if (ball.velocityX > MAX_VELOCITY_X) ball.velocityX = MAX_VELOCITY_X;
-                    if (ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-                    else if (ball.velocityY > MAX_VELOCITY_Y) ball.velocityY = MAX_VELOCITY_Y;
                 }
             }
         }
 
         function updateBall() {
-            ball.velocityY = Math.max(ball.velocityY - GRAVITY_BALL, -MAX_VELOCITY_Y);
-            ball.x += ball.velocityX;
-            ball.y += ball.velocityY;
-            collisionBallSlime(slime1);
-            collisionBallSlime(slime2);
+            ball.velocityY = Math.max(ball.velocityY - GRAVITY_BALL, -22);
+            ball.x += ball.velocityX; ball.y += ball.velocityY;
+            collisionBallSlime(slimeLeft); collisionBallSlime(slimeRight);
             if (ball.x < 15) { ball.x = 15; ball.velocityX = -ball.velocityX; }
             else if (ball.x > 985) { ball.x = 985; ball.velocityX = -ball.velocityX; }
             if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
@@ -87,67 +75,57 @@
 
         function updateFrame() {
             if (!gameRunning) return;
-            updateSlimeVelocities(slime1, KEY_A, KEY_D, KEY_W);
-            if (gameMode === '2P') {
-                updateSlimeVelocities(slime2, KEY_LEFT, KEY_RIGHT, KEY_UP);
-            } else if (activeAI) {
-                activeAI.move();
-                slime2.velocityX = (activeAI.movement === 1) ? -8 : (activeAI.movement === 2 ? 8 : 0);
-                if (activeAI.jumpSet && slime2.y === 0) slime2.velocityY = JUMP_POWER;
+            updateSlimeVelocities(slimeLeft, KEY_A, KEY_D, KEY_W);
+            if (!onePlayer) {
+                updateSlimeVelocities(slimeRight, KEY_LEFT, KEY_RIGHT, KEY_UP);
+            } else {
+                slimeAI.move();
+                var move = slimeAI.movement;
+                slimeRight.velocityX = (move === 1) ? -8 : (move === 2 ? 8 : 0);
+                if (slimeAI.jumpSet && slimeRight.y === 0) slimeRight.velocityY = JUMP_POWER;
             }
-            updateSlime(slime1, 50, 445);
-            updateSlime(slime2, 555, 950);
+            updateSlime(slimeLeft, 50, 445); updateSlime(slimeRight, 555, 950);
             updateBall();
         }
 
-        function renderBackground() {
-            var cH = gameHeight / 5;
-            ctx.fillStyle = '#0077ff'; ctx.fillRect(0, 0, gameWidth, gameHeight - cH);
-            ctx.fillStyle = '#ca6'; ctx.fillRect(0, gameHeight - cH, gameWidth, cH);
-            ctx.fillStyle = '#fff'; ctx.fillRect(gameWidth/2 - 2, 7*gameHeight/10, 4, gameHeight/10 + 5);
-        }
-
         function renderGame() {
-            renderBackground();
-            ctx.font = "20px Georgia"; ctx.fillStyle = "white";
-            ctx.fillText("Score: " + slime1Score, 20, 30);
-            ctx.fillText("Score: " + slime2Score, gameWidth - 120, 30);
-            ball.render(); slime1.render(); slime2.render();
+            var cH = viewHeight / 5;
+            ctx.fillStyle = '#0077ff'; ctx.fillRect(0, 0, viewWidth, viewHeight - cH);
+            ctx.fillStyle = '#ca6'; ctx.fillRect(0, viewHeight - cH, viewWidth, cH);
+            ctx.fillStyle = '#fff'; ctx.fillRect(viewWidth/2 - 2, 7*viewHeight/10, 4, viewHeight/10 + 5);
+            ctx.font = "20px Arial"; ctx.fillStyle = "white";
+            ctx.fillText("Score: " + slime1Score, 30, 40);
+            ctx.fillText("Score: " + slime2Score, viewWidth - 130, 40);
+            ball.render(); slimeLeft.render(); slimeRight.render();
         }
 
-        function gameIteration() {
-            updateFrame();
-            requestAnimationFrame(renderGame);
-        }
+        function gameIteration() { updateFrame(); requestAnimationFrame(renderGame); }
 
         function initRound(server) {
-            ball.x = server ? 200 : 800; ball.y = 356;
-            ball.velocityX = 0; ball.velocityY = 0;
-            slime1.x = 200; slime1.y = 0;
-            slime2.x = 800; slime2.y = 0;
+            ball.x = server ? 200 : 800; ball.y = 356; ball.velocityX = 0; ball.velocityY = 0;
+            slimeLeft.x = 200; slimeLeft.y = 0; slimeRight.x = 800; slimeRight.y = 0;
         }
 
         function bodyload() {
-            canvas = document.getElementById("gameCanvas");
-            ctx = canvas.getContext("2d");
-            gameWidth = 1000; gameHeight = 1000; // Physics units
-            pixelsPerUnit = canvas.width / 1000;
-            ball = newBall(25, '#ff0');
-            slime1 = newSlime(100, '#f00'); slime2 = newSlime(100, '#0f0');
-            slimeLeft = slime1; slimeRight = slime2;
-            initRound(true);
-            setInterval(gameIteration, 20);
+            canvas = document.getElementById("gameCanvas"); ctx = canvas.getContext("2d");
+            viewWidth = canvas.width; viewHeight = canvas.height;
+            pixelsPerUnitX = viewWidth / 1000; pixelsPerUnitY = viewHeight / 1000;
+            courtYPix = 4 * viewHeight / 5;
+            ball = newBall(25, '#ff0'); slimeLeft = newSlime(100, '#0f0'); slimeRight = newSlime(100, '#f00');
+            initRound(true); setInterval(gameIteration, 20);
         }
     </script>
 </head>
-<body onload="bodyload()" style="margin:0; display:flex; justify-content:center; align-items:center; background:#222; height:100vh;">
-    <div style="position: relative;">
-        <div id="menu" style="position: absolute; width: 750px; height: 375px; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 15px; border: 3px solid #0077ff;">
-            <h1 style="font-family: Arial; font-size: 40px; margin: 0;">SLIME VOLLEYBALL</h1>
-            <button style="width: 220px; padding: 12px; margin: 8px; cursor: pointer; font-weight: bold; background: #ff4444; color: white; border: 2px solid white; border-radius: 30px;" onclick="startLevel('1P')">1 PLAYER</button>
-            <button style="width: 220px; padding: 12px; margin: 8px; cursor: pointer; font-weight: bold; background: #44ff44; color: black; border: 2px solid white; border-radius: 30px;" onclick="startLevel('2P')">2 PLAYER</button>
+<body onload="bodyload()" style="background:#222; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;">
+    <div id="ContentDiv">
+        <div id="menu" style="position: absolute; width: 750px; height: 375px; background: #ca6 url('beachbg.jpg') no-repeat; background-size: cover; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 10px; text-align: center;">
+            <h1 style="color: white; text-shadow: 2px 2px 4px #000;">Slime Volleyball</h1>
+            <div>
+                <span class="btn" style="font-size: 30px; margin: 20px;" onclick="start(true)">One Player</span>
+                <span class="btn" style="font-size: 30px; margin: 20px;" onclick="start(false)">Two Players</span>
+            </div>
         </div>
-        <canvas id="gameCanvas" width="750" height="375" style="border: 2px solid #000;"></canvas>
+        <canvas id="gameCanvas" width="750" height="375" style="display: block; box-shadow: 0 0 20px #000; border-radius: 10px;"></canvas>
     </div>
 </body>
 </html>
