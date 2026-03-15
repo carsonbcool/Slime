@@ -14,30 +14,34 @@
 
         // GAME DATA
         var ball;
-        var slime1;
-        var slime2;
-        var slime1Score;
-        var slime2Score;
+        var slime1, slime2;
+        var slimeLeft, slimeRight; // Globals required by SlimeAI.js
+        var slime1Score, slime2Score;
 
-        // NEW: MENU DATA
+        // MENU & AI STATE
         var gameRunning = false;
-        var gameMode = '2P'; 
+        var gameMode = '1P'; 
+        var activeAI = null;
 
         function startLevel(mode) {
             gameMode = mode;
             gameRunning = true;
             document.getElementById('menu').style.display = 'none';
+            
+            // Initialize the AI if playing 1P
+            if (gameMode === '1P') {
+                activeAI = newSlimeAI(false, "Slime Master");
+                setMasterSlime(activeAI);
+            } else {
+                activeAI = null;
+            }
+            
             initRound(true);
         }
 
-        // Game Update Functions
         function updateSlimeVelocities(s, left, right, up) {
             if (keysDown[left]) {
-                if (keysDown[right]) {
-                    s.velocityX = 0;
-                } else {
-                    s.velocityX = -8;
-                }
+                s.velocityX = (keysDown[right]) ? 0 : -8;
             } else if (keysDown[right]) {
                 s.velocityX = 8;
             } else {
@@ -51,43 +55,29 @@
         function updateSlime(s, leftLimit, rightLimit) {
             if (s.velocityX != 0) {
                 s.x += s.velocityX;
-                if (s.x - s.radius < leftLimit) {
-                    s.x = leftLimit + s.radius;
-                } else if (s.x + s.radius > rightLimit) {
-                    s.x = rightLimit - s.radius;
-                }
+                if (s.x - s.radius < leftLimit) s.x = leftLimit + s.radius;
+                else if (s.x + s.radius > rightLimit) s.x = rightLimit - s.radius;
             }
             if (s.y > 0 || s.velocityY != 0) {
                 s.y += s.velocityY;
                 s.velocityY -= 1.2;
-                if (s.y < 0) {
-                    s.y = 0;
-                    s.velocityY = 0;
-                }
+                if (s.y < 0) { s.y = 0; s.velocityY = 0; }
             }
         }
-
-        var MAX_VELOCITY_X = 15;
-        var MAX_VELOCITY_Y = 11;
 
         function collisionBallSlime(s) {
             var dx = ball.x - s.x;
             var dy = ball.y - s.y;
             var dist = Math.sqrt(dx * dx + dy * dy);
-            var dVelocityX = ball.velocityX - s.velocityX;
-            var dVelocityY = ball.velocityY - s.velocityY;
-
             if (dy > 0 && dist < ball.radius + s.radius) {
                 ball.x = s.x + (s.radius + ball.radius) * dx / dist;
                 ball.y = s.y + (s.radius + ball.radius) * dy / dist;
-                var something = (dx * dVelocityX + dy * dVelocityY) / dist;
+                var dVX = ball.velocityX - s.velocityX;
+                var dVY = ball.velocityY - s.velocityY;
+                var something = (dx * dVX + dy * dVY) / dist;
                 if (something <= 0) {
                     ball.velocityX += s.velocityX - 1.92 * dx * something / dist;
                     ball.velocityY += s.velocityY - 1.92 * dy * something / dist;
-                    if (ball.velocityX < -MAX_VELOCITY_X) ball.velocityX = -MAX_VELOCITY_X;
-                    else if (ball.velocityX > MAX_VELOCITY_X) ball.velocityX = MAX_VELOCITY_X;
-                    if (ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-                    else if (ball.velocityY > MAX_VELOCITY_Y) ball.velocityY = MAX_VELOCITY_Y;
                 }
             }
         }
@@ -95,44 +85,36 @@
         function updateBall() {
             ball.x += ball.velocityX;
             ball.y += ball.velocityY;
-            ball.velocityY += -.5;
-            if (ball.velocityY < -MAX_VELOCITY_Y) ball.velocityY = -MAX_VELOCITY_Y;
-
+            ball.velocityY -= 0.5;
             collisionBallSlime(slime1);
             collisionBallSlime(slime2);
-
-            if (ball.x - ball.radius < 0) {
-                ball.x = ball.radius;
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > 1000) {
                 ball.velocityX = -ball.velocityX;
-            } else if (ball.x + ball.radius > 1000) {
-                ball.x = 1000 - ball.radius;
-                ball.velocityX = -ball.velocityX;
+                ball.x = (ball.x < 500) ? ball.radius : 1000 - ball.radius;
             }
-
             if (ball.y < 0) {
-                if (ball.x > 500) {
-                    slime1Score++;
-                    initRound(true);
-                } else {
-                    slime2Score++;
-                    initRound(false);
-                }
+                if (ball.x > 500) { slime1Score++; initRound(true); }
+                else { slime2Score++; initRound(false); }
             }
         }
 
         function updateFrame() {
-            if (!gameRunning) return; // Brake until button is clicked
+            if (!gameRunning) return;
 
-            // Player 1
+            // P1 Controls
             updateSlimeVelocities(slime1, KEY_A, KEY_D, KEY_W);
 
-            // Player 2 or AI
+            // P2 or AI Controls
             if (gameMode === '2P') {
                 updateSlimeVelocities(slime2, KEY_LEFT, KEY_RIGHT, KEY_UP);
-            } else {
-                if (typeof controlSlime === "function") {
-                    controlSlime(slime2, ball);
-                }
+            } else if (activeAI) {
+                activeAI.move();
+                // Translate AI instructions (0=none, 1=toNet, 2=toWall)
+                if (activeAI.movement === 1) slime2.velocityX = -8;
+                else if (activeAI.movement === 2) slime2.velocityX = 8;
+                else slime2.velocityX = 0;
+
+                if (activeAI.jumpSet && slime2.y === 0) slime2.velocityY = 18;
             }
 
             updateSlime(slime1, 0, 495);
@@ -141,25 +123,19 @@
         }
 
         function renderBackground() {
-            var courtHeight = gameHeight / 5;
-            ctx.fillStyle = '#0077ff'
-            ctx.fillRect(0, 0, gameWidth, gameHeight - courtHeight);
-            ctx.fillStyle = '#ca6'
-            ctx.fillRect(0, gameHeight - courtHeight, gameWidth, courtHeight);
-            ctx.fillStyle = '#fff'
-            ctx.fillRect(gameWidth / 2 - 2, 7 * gameHeight / 10, 4, gameHeight / 10 + 5);
+            var cH = gameHeight / 5;
+            ctx.fillStyle = '#0077ff'; ctx.fillRect(0, 0, gameWidth, gameHeight - cH);
+            ctx.fillStyle = '#ca6'; ctx.fillRect(0, gameHeight - cH, gameWidth, cH);
+            ctx.fillStyle = '#fff'; ctx.fillRect(gameWidth/2 - 2, 7*gameHeight/10, 4, gameHeight/10 + 5);
         }
 
         function renderGame() {
             if (updatesToPaint != 0) {
                 renderBackground();
-                ctx.font = "20px Georgia";
-                ctx.fillStyle = "white";
+                ctx.font = "20px Georgia"; ctx.fillStyle = "white";
                 ctx.fillText("Score: " + slime1Score, 20, 30);
                 ctx.fillText("Score: " + slime2Score, gameWidth - 120, 30);
-                ball.render();
-                slime1.render();
-                slime2.render();
+                ball.render(); slime1.render(); slime2.render();
                 updatesToPaint = 0;
             }
         }
@@ -171,44 +147,35 @@
         }
 
         function initRound(server) {
-            ball.x = server ? 200 : 800;
-            ball.y = 200;
-            ball.velocityX = 0;
-            ball.velocityY = 0;
+            ball.x = server ? 200 : 800; ball.y = 200;
+            ball.velocityX = 0; ball.velocityY = 0;
             slime1.x = 200; slime1.y = 0;
             slime2.x = 800; slime2.y = 0;
-        }
-
-        function updateWindowSize(width, height) {
-            gameWidth = width;
-            gameHeight = height;
-            pixelsPerUnit = gameWidth / 1000;
         }
 
         function bodyload() {
             canvas = document.getElementById("gameCanvas");
             ctx = canvas.getContext("2d");
-            updateWindowSize(canvas.width, canvas.height);
+            gameWidth = canvas.width; gameHeight = canvas.height;
+            pixelsPerUnit = gameWidth / 1000;
             ball = newBall(15, '#ff0');
-            slime1 = newSlime(50, '#f00');
-            slime2 = newSlime(50, '#0f0');
-            slime1Score = 0;
-            slime2Score = 0;
+            slime1 = newSlime(50, '#f00'); slime2 = newSlime(50, '#0f0');
+            slimeLeft = slime1; slimeRight = slime2; // Assign AI references
+            slime1Score = 0; slime2Score = 0;
             initRound(true);
             setInterval(gameIteration, 20);
         }
     </script>
 </head>
-
-<body onload="bodyload()" style="margin: 0; display: flex; justify-content: center; align-items: center; background: #333; height: 100vh;">
+<body onload="bodyload()" style="margin:0; display:flex; justify-content:center; align-items:center; background:#222; height:100vh;">
     <div style="position: relative;">
-        <div id="menu" style="position: absolute; width: 730px; height: 365px; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 10px;">
-            <h1 style="font-family: Georgia; margin-bottom: 30px;">SLIME VOLLEYBALL</h1>
-            <button style="padding: 15px 40px; margin: 10px; cursor: pointer; font-size: 18px; background: #f00; color: white; border: none; border-radius: 5px;" onclick="startLevel('1P')">1 PLAYER</button>
-            <button style="padding: 15px 40px; margin: 10px; cursor: pointer; font-size: 18px; background: #0f0; color: black; border: none; border-radius: 5px;" onclick="startLevel('2P')">2 PLAYER</button>
+        <div id="menu" style="position: absolute; width: 730px; height: 365px; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 15px; border: 3px solid #0077ff;">
+            <h1 style="font-family: Arial; font-size: 40px; margin: 0;">SLIME VOLLEYBALL</h1>
+            <p style="margin-bottom: 30px; letter-spacing: 3px;">REMASTERED</p>
+            <button style="width: 220px; padding: 12px; margin: 8px; cursor: pointer; font-weight: bold; background: #ff4444; color: white; border: 2px solid white; border-radius: 30px;" onclick="startLevel('1P')">1 PLAYER</button>
+            <button style="width: 220px; padding: 12px; margin: 8px; cursor: pointer; font-weight: bold; background: #44ff44; color: black; border: 2px solid white; border-radius: 30px;" onclick="startLevel('2P')">2 PLAYER</button>
         </div>
-        
-        <canvas id="gameCanvas" width="730" height="365" style="border: 2px solid #000; display: block;"></canvas>
+        <canvas id="gameCanvas" width="730" height="365" style="border: 2px solid #000;"></canvas>
     </div>
 </body>
 </html>
