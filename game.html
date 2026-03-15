@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tournament Slime Volleyball</title>
+    <style>
+        body { background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: Arial; }
+        #canvas-wrap { position: relative; box-shadow: 0 0 30px #000; border-radius: 10px; overflow: hidden; }
+        #menu { position: absolute; width: 750px; height: 375px; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; color: white; }
+        .btn { padding: 15px 40px; margin: 15px; font-size: 24px; cursor: pointer; background: #3498db; color: white; border-radius: 50px; border: none; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: #2980b9; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+    <div id="menu">
+        <h1 style="font-size: 50px; margin-bottom: 20px;">SLIME VOLLEYBALL</h1>
+        <button class="btn" onclick="start(true)">ONE PLAYER</button>
+        <button class="btn" onclick="start(false)" style="background: #2ecc71;">TWO PLAYERS</button>
+    </div>
+    <canvas id="gameCanvas" width="750" height="375"></canvas>
+</div>
+
+<script>
+    // --- SETTINGS ---
+    var canvas = document.getElementById("gameCanvas");
+    var ctx = canvas.getContext("2d");
+    var keys = {};
+    window.onkeydown = function(e) { keys[e.keyCode] = true; };
+    window.onkeyup = function(e) { keys[e.keyCode] = false; };
+
+    var GRAVITY_BALL = 1, GRAVITY_SLIME = 2, JUMP_POWER = 31;
+    var gameRunning = false, is1P = true;
+    var slime1Score = 0, slime2Score = 0;
+
+    // --- IMAGES ---
+    var imgBall = new Image(); imgBall.src = "vball.png";
+    var imgRed = new Image(); imgRed.src = "slime175red.png";
+    var imgGreen = new Image(); imgGreen.src = "slime175green.png";
+
+    // --- OBJECTS ---
+    var ball = { x: 200, y: 356, vx: 0, vy: 0, rad: 25, rot: 0 };
+    var sL = { x: 200, y: 0, vx: 0, vy: 0, rad: 100, side: 'L' };
+    var sR = { x: 800, y: 0, vx: 0, vy: 0, rad: 100, side: 'R' };
+
+    function start(mode) {
+        is1P = mode;
+        gameRunning = true;
+        document.getElementById('menu').style.display = 'none';
+        slime1Score = 0; slime2Score = 0;
+        initRound(true);
+        loop();
+    }
+
+    function initRound(server) {
+        ball.x = server ? 200 : 800; ball.y = 356; ball.vx = 0; ball.vy = 0;
+        sL.x = 200; sL.y = 0; sL.vx = 0; sL.vy = 0;
+        sR.x = 800; sR.y = 0; sR.vx = 0; sR.vy = 0;
+    }
+
+    function loop() {
+        if (!gameRunning) return;
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function update() {
+        // Player 1 (A, D, W)
+        sL.vx = keys[65] ? (keys[68] ? 0 : -8) : (keys[68] ? 8 : 0);
+        if (sL.y == 0 && keys[87]) sL.vy = JUMP_POWER;
+
+        // Player 2 or Simple AI
+        if (!is1P) {
+            sR.vx = keys[37] ? (keys[39] ? 0 : -8) : (keys[39] ? 8 : 0);
+            if (sR.y == 0 && keys[38]) sR.vy = JUMP_POWER;
+        } else {
+            // Simple logic for testing: Follow ball
+            if (ball.x > sR.x + 10) sR.vx = 8;
+            else if (ball.x < sR.x - 10) sR.vx = -8;
+            else sR.vx = 0;
+            if (ball.y > 200 && Math.abs(ball.x - sR.x) < 50 && sR.y == 0) sR.vy = JUMP_POWER;
+        }
+
+        // Physics
+        [sL, sR].forEach(s => {
+            s.x += s.vx;
+            if (s.y > 0 || s.vy != 0) { s.vy -= GRAVITY_SLIME; s.y += s.vy; }
+            if (s.y < 0) { s.y = 0; s.vy = 0; }
+        });
+        
+        // Boundaries
+        if (sL.x < 50) sL.x = 50; if (sL.x > 445) sL.x = 445;
+        if (sR.x < 555) sR.x = 555; if (sR.x > 950) sR.x = 950;
+
+        ball.vy = Math.max(ball.vy - GRAVITY_BALL, -22);
+        ball.x += ball.vx; ball.y += ball.vy;
+
+        // Collisions
+        [sL, sR].forEach(s => {
+            var dx = 2 * (ball.x - s.x);
+            var dy = ball.y - s.y;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+            if (dy > 0 && dist < (ball.rad + s.rad)) {
+                ball.x = s.x + Math.trunc(((s.rad + ball.rad)/2) * dx / dist);
+                ball.y = s.y + Math.trunc((s.rad + ball.rad) * dy / dist);
+                var dvx = ball.vx - s.vx;
+                var dvy = ball.vy - s.vy;
+                var hit = Math.trunc((dx * dvx + dy * dvy) / dist);
+                if (hit <= 0) {
+                    ball.vx += Math.trunc(s.vx - 2 * dx * hit / dist);
+                    ball.vy += Math.trunc(s.vy - 2 * dy * hit / dist);
+                }
+            }
+        });
+
+        // Net and Walls
+        if (ball.x < 15 || ball.x > 985) { ball.vx = -ball.vx; ball.x = ball.x < 500 ? 15 : 985; }
+        if (ball.x > 480 && ball.x < 520 && ball.y < 140) {
+            if (ball.vy < 0 && ball.y > 130) { ball.vy *= -1; ball.y = 130; }
+            else { ball.vx = ball.x < 500 ? -Math.abs(ball.vx) : Math.abs(ball.vx); }
+        }
+
+        // Scoring
+        if (ball.y < 0) {
+            if (ball.x > 500) slime1Score++; else slime2Score++;
+            initRound(ball.x <= 500);
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = "#0077ff"; ctx.fillRect(0, 0, 750, 300);
+        ctx.fillStyle = "#ca6"; ctx.fillRect(0, 300, 750, 75);
+        ctx.fillStyle = "white"; ctx.fillRect(373, 260, 4, 45);
+        
+        ctx.font = "20px Arial";
+        ctx.fillText("Score: " + slime1Score, 30, 40);
+        ctx.fillText("Score: " + slime2Score, 650, 40);
+
+        // Draw Ball
+        ball.rot += ball.vx / 100;
+        ctx.save();
+        ctx.translate(ball.x * 0.75, 300 - (ball.y * 0.3));
+        ctx.rotate(ball.rot);
+        ctx.drawImage(imgBall, -15, -15, 30, 30);
+        ctx.restore();
+
+        // Draw Slimes
+        [[sL, imgGreen], [sR, imgRed]].forEach(pair => {
+            var s = pair[0], img = pair[1];
+            var x = s.x * 0.75, y = 300 - (s.y * 0.3);
+            ctx.drawImage(img, x - 37, y - 37, 75, 37);
+            
+            // Eyes
+            var eyeX = x + (s.side == 'L' ? 15 : -15);
+            var eyeY = y - 20;
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(eyeX, eyeY, 8, 0, 7); ctx.fill();
+            ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(eyeX + (ball.x * 0.75 - eyeX)/50, eyeY + (300 - ball.y*0.3 - eyeY)/50, 4, 0, 7); ctx.fill();
+        });
+    }
+</script>
+</body>
+</html>
