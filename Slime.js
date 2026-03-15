@@ -1,7 +1,6 @@
-// This file handles the drawing of the ball and slimes
 function newBall(radius, color) {
   var img = new Image();
-  img.src = "vball.png"; // Ensure this is lowercase on GitHub!
+  img.src = "vball.png";
   
   return {
     radius: radius,
@@ -16,7 +15,6 @@ function newBall(radius, color) {
       var yPix = courtYPix - (this.y * pixelsPerUnitY);
       var radiusPix = this.radius * pixelsPerUnitY + 2;
 
-      // Add rotation like the original game
       this.rotation += this.velocityX / 100;
       
       ctx.save();
@@ -28,12 +26,13 @@ function newBall(radius, color) {
   };
 }
 
-function newSlime(radius, color) {
+function newSlime(onLeft, radius, color) {
   var img = new Image();
-  // P1 is Red (#f00), P2 is Green (#0f0)
-  img.src = (color === '#f00') ? "slime175red.png" : "slime175green.png";
+  // P1 (Left) is Green, P2 (Right/AI) is Red
+  img.src = onLeft ? "slime175green.png" : "slime175red.png";
 
   return {
+    onLeft: onLeft,
     radius: radius,
     color: color,
     x: 0,
@@ -45,12 +44,11 @@ function newSlime(radius, color) {
       var yPix = courtYPix - (this.y * pixelsPerUnitY);
       var radiusPix = this.radius * pixelsPerUnitY;
 
-      // Draw the slime image
+      // Draw the Slime
       ctx.drawImage(img, xPix - radiusPix, yPix - radiusPix, radiusPix * 2, radiusPix);
       
-      // Draw the Eye (the classic tournament look)
-      var onLeft = (this.color === '#f00'); 
-      var eyeX = this.x + (onLeft ? 1 : -1) * this.radius / 4;
+      // Fix the Eyes: Flip position based on which side they are on
+      var eyeX = this.x + (this.onLeft ? 1 : -1) * this.radius / 4;
       var eyeY = this.y + this.radius / 2;
       var eyeXPix = eyeX * pixelsPerUnitX;
       var eyeYPix = courtYPix - (eyeY * pixelsPerUnitY);
@@ -60,7 +58,6 @@ function newSlime(radius, color) {
       ctx.arc(eyeXPix, eyeYPix, radiusPix / 4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pupil follows the ball
       var dx = ball.x - eyeX;
       var dy = eyeY - ball.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
